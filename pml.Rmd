@@ -1,0 +1,96 @@
+---
+title: "pml-Project"
+author: "Ariful Mondal"
+date: "Sunday, November 23, 2014"
+output: html_document
+---
+
+Summary
+----------
+
+The goal of this course project is to predict how well 6 different people performed barbell lifts utilizing data collected from activity monitoring devices.
+
+Input Data:
+---------
+The input data consisted of various movement measurments including acceleration components of the arms and pitch and roll orientations of the dumbell. More information can be found at the original data authors website linked to below.
+
+The data used here was downloaded from the course website, where the training and testing data were already partitioned:
+
+Training Data
+
+Testing Data
+
+The original data was taken from the originating study linked below. Please see the site and associated paper for more information. http://groupware.les.inf.puc-rio.br/har
+
+Data Analysis and Predictions
+--------------------------
+# Load required Library
+```{r}
+library(ggplot2)
+library(caret)
+library(randomForest)
+library(lattice)
+```
+# load data
+```{r}
+train <- read.csv("./data/pml-training.csv", header=T, comment.char='',
+                  row.names=1,na.strings=c("","NA","#DIV/0!"))
+```
+
+# Remove columns with more than 75%
+```{r}
+nav <- sapply(colnames(train), function(x) if(sum(is.na(train[, x])) > 0.75*nrow(train)){return(T)}else{return(F)})
+train <- train[, !nav]
+```
+# Create partition 80%-20%
+```{r}
+inTrain <- createDataPartition(y=train$classe, p=0.8, list=FALSE)
+training <- train[inTrain,]
+testing <- train[-inTrain,]
+```
+
+Train classe with fewer number of variables due to space limitations using boosting method "gbm"
+
+```{r, echo=T}
+set.seed(1234)
+#boostFit <- train(classe ~ ., method = "gbm", data = train, verbose = F, 
+#                trControl = trainControl(method = "cv", number = 10))
+boostFit <- train(classe ~ user_name + pitch_arm + yaw_arm + roll_arm + 
+                        roll_belt + pitch_belt + yaw_belt, 
+                  trControl = trainControl(method = "cv", number = 10),
+                method="gbm", data=training, verbose=FALSE)
+```
+
+Summary
+```{r, echo=T}
+predictTr <- predict(boostFit,training)
+table(predictTr, training$classe)
+summary(boostFit,n.trees=150)
+ggplot(boostFit)
+
+```
+
+Testing the performance on the 20 percent subsample to get an estimate on out-of-sample performance.
+
+```{r, echo=T}
+predictTe <- predict(boostFit,testing)
+table(predictTe, testing$classe)
+```
+
+Submit answers online
+--------------------------
+
+  # Looks like they all do; let's write out the prediction files to submit
+  # This uses the code supplied by the class instructions
+  answers <- pred.df$rf.pred
+```{r}
+  pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+      filename = paste0("problem_id_",i,".txt")
+      write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+  }
+```
+
+  pml_write_files(answers)
