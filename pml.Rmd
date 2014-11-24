@@ -35,6 +35,8 @@ library(lattice)
 ```{r}
 train <- read.csv("./data/pml-training.csv", header=T, comment.char='',
                   row.names=1,na.strings=c("","NA","#DIV/0!"))
+test.answer<- read.csv("./data/pml-testing.csv", header=T, comment.char='',
+                  row.names=1,na.strings=c("","NA","#DIV/0!"))
 ```
 
 # Remove columns with more than 75%
@@ -84,6 +86,8 @@ Submit answers online
   # This uses the code supplied by the class instructions
   answers <- pred.df$rf.pred
 ```{r}
+
+prd.submit <- as.character(predict(boostFit, test.answer))
   pml_write_files = function(x){
     n = length(x)
     for(i in 1:n){
@@ -91,6 +95,7 @@ Submit answers online
       write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
     }
   }
+  pml_write_files(prd.submit)
 ```
 
-  pml_write_files(answers)
+
